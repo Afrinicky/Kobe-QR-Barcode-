@@ -10,6 +10,29 @@ APK/AAB.
 
 ---
 
+## Download
+
+**[⬇️ Download the latest APK](https://github.com/afrinicky/kobe-qr-barcode-/releases/latest/download/kobe-qr-barcode-debug.apk)**
+
+This is a debug build produced automatically by GitHub Actions
+([`build-apk.yml`](.github/workflows/build-apk.yml)) and attached to the
+[latest release](https://github.com/afrinicky/kobe-qr-barcode-/releases/latest).
+It is debug-signed, so it installs directly — no keystore or Android Studio needed.
+
+**Install on your phone**
+
+1. Open the download link above on the Android device (or transfer the `.apk` to it).
+2. When prompted, allow **"Install unknown apps"** for your browser or file manager.
+3. Open the downloaded `kobe-qr-barcode-debug.apk` and tap **Install**.
+
+> The link becomes live after the workflow's first run finishes and publishes the
+> `latest` release. If it 404s, check the
+> [Actions tab](https://github.com/afrinicky/kobe-qr-barcode-/actions) — the build
+> may still be running. A debug build is intended for testing/sideloading; ship a
+> signed release APK/AAB for the Play Store (see [Signing a release](#signing-a-release)).
+
+---
+
 ## Features
 
 ### Scan

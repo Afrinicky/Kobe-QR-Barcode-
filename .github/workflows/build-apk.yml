@@ -1,0 +1,83 @@
+name: Build APK
+
+# Builds the installable debug APK on GitHub's cloud runners and publishes it
+# to a GitHub Release, so it can be downloaded and sideloaded without a local
+# Android Studio setup. The debug APK is debug-signed, so it installs directly.
+
+on:
+  push:
+    branches:
+      - claude/kobe-qr-barcode-app-budxd8
+      - claude/quirky-euler-gwyvby
+      - main
+      - master
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug --no-daemon
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest --no-daemon
+
+      - name: Stage APK
+        run: |
+          mkdir -p dist
+          cp app/build/outputs/apk/debug/app-debug.apk dist/kobe-qr-barcode-debug.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kobe-qr-barcode-debug-apk
+          path: dist/kobe-qr-barcode-debug.apk
+
+      # Publish/refresh a rolling "latest" release so the download link in the
+      # README is stable across builds.
+      - name: Publish to "latest" release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete latest --cleanup-tag --yes 2>/dev/null || true
+          gh release create latest dist/kobe-qr-barcode-debug.apk \
+            --title "Latest debug build" \
+            --notes "Automated debug APK build from ${{ github.sha }}. Sideload-installable (debug-signed). Enable \"Install unknown apps\" for your browser/file manager, then open the APK to install." \
+            --target "${{ github.sha }}"
+
+      # For version tags (v1.0.0 …), also keep an immutable release.
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" dist/kobe-qr-barcode-debug.apk \
+            --title "${{ github.ref_name }}" \
+            --notes "Debug APK for ${{ github.ref_name }}." \
+            || gh release upload "${{ github.ref_name }}" dist/kobe-qr-barcode-debug.apk --clobber
